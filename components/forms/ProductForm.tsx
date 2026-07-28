@@ -6,6 +6,8 @@ import { idle } from '@/lib/action-state';
 import { Field } from '@/components/ui/Field';
 import { FormMessage } from '@/components/ui/Alert';
 import { SubmitButton } from '@/components/ui/SubmitButton';
+import { AmountInput } from '@/components/ui/AmountInput';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { formatUGX } from '@/lib/format';
 import { todayInKampala } from '@/lib/dates';
 import type { Category, Item } from '@/db/schema';
@@ -53,13 +55,11 @@ export function ProductForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Shopping day" htmlFor="purchaseDate" error={state.errors?.purchaseDate}>
-          <input
+          <DatePicker
             id="purchaseDate"
             name="purchaseDate"
-            type="date"
-            required
             defaultValue={item?.purchaseDate ?? todayInKampala()}
-            className="control"
+            invalid={Boolean(state.errors?.purchaseDate)}
           />
         </Field>
 
@@ -106,16 +106,12 @@ export function ProductForm({
           htmlFor="costPrice"
           error={state.errors?.costPrice}
         >
-          <input
+          <AmountInput
             id="costPrice"
             name="costPrice"
-            type="number"
-            inputMode="numeric"
-            min={1}
-            step={1}
             required
             value={costPrice}
-            onChange={(e) => setCostPrice(e.target.value)}
+            onValueChange={setCostPrice}
             className="control tnum"
           />
         </Field>
@@ -126,16 +122,12 @@ export function ProductForm({
           error={state.errors?.minPrice}
           hint="Attendants see this as the minimum"
         >
-          <input
+          <AmountInput
             id="minPrice"
             name="minPrice"
-            type="number"
-            inputMode="numeric"
-            min={1}
-            step={1}
             required
             value={minPrice}
-            onChange={(e) => setMinPrice(e.target.value)}
+            onValueChange={setMinPrice}
             className="control tnum"
           />
         </Field>

@@ -1,20 +1,27 @@
 'use client';
 
-import { useActionState, useEffect, useRef } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
 import { recordExpense } from '@/app/actions/expenses';
 import { idle } from '@/lib/action-state';
 import { Field } from '@/components/ui/Field';
 import { FormMessage } from '@/components/ui/Alert';
 import { SubmitButton } from '@/components/ui/SubmitButton';
+import { AmountInput } from '@/components/ui/AmountInput';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { todayInKampala } from '@/lib/dates';
 import { EXPENSE_KINDS, EXPENSE_KIND_LABELS } from '@/db/schema';
 
 export function ExpenseForm() {
   const [state, formAction] = useActionState(recordExpense, idle);
   const formRef = useRef<HTMLFormElement>(null);
+  const [amount, setAmount] = useState('');
 
   useEffect(() => {
-    if (state.ok) formRef.current?.reset();
+    if (state.ok) {
+      formRef.current?.reset();
+      // reset() only clears uncontrolled fields; the amount is React's now.
+      setAmount('');
+    }
   }, [state.ok, state.nonce]);
 
   return (
@@ -23,13 +30,11 @@ export function ExpenseForm() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Date" htmlFor="expenseDate" error={state.errors?.expenseDate}>
-          <input
+          <DatePicker
             id="expenseDate"
             name="expenseDate"
-            type="date"
-            required
             defaultValue={todayInKampala()}
-            className="control"
+            invalid={Boolean(state.errors?.expenseDate)}
           />
         </Field>
 
@@ -61,14 +66,12 @@ export function ExpenseForm() {
       </Field>
 
       <Field label="Amount" htmlFor="amount" error={state.errors?.amount}>
-        <input
+        <AmountInput
           id="amount"
           name="amount"
-          type="number"
-          inputMode="numeric"
-          min={1}
-          step={1}
           required
+          value={amount}
+          onValueChange={setAmount}
           className="control tnum"
         />
       </Field>

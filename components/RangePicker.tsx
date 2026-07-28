@@ -2,6 +2,7 @@
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { todayInKampala } from '@/lib/dates';
 
 const PRESETS = [
@@ -68,30 +69,16 @@ export function RangePicker() {
       {current === 'custom' && (
         <div className="surface flex flex-wrap items-end gap-3 p-3">
           <div className="min-w-[9rem] flex-1">
-            <label htmlFor="range-from" className="label">
+            <label id="range-from-label" htmlFor="range-from" className="label">
               From
             </label>
-            <input
-              id="range-from"
-              type="date"
-              value={from}
-              max={to}
-              onChange={(e) => setFrom(e.target.value)}
-              className="control"
-            />
+            <DatePicker id="range-from" value={from} max={to} onChange={setFrom} />
           </div>
           <div className="min-w-[9rem] flex-1">
-            <label htmlFor="range-to" className="label">
+            <label id="range-to-label" htmlFor="range-to" className="label">
               To
             </label>
-            <input
-              id="range-to"
-              type="date"
-              value={to}
-              min={from}
-              onChange={(e) => setTo(e.target.value)}
-              className="control"
-            />
+            <DatePicker id="range-to" value={to} min={from} onChange={setTo} />
           </div>
           <button
             type="button"

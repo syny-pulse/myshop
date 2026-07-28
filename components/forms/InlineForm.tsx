@@ -35,17 +35,20 @@ export function InlineForm({
     if (state.ok) formRef.current?.reset();
   }, [state.ok, state.nonce]);
 
+  const error = state.errors?.[name];
+
   return (
     <form ref={formRef} action={formAction} className="space-y-3">
       <FormMessage state={state} />
+      {/*
+       * The hint lives outside this row on purpose. It used to render inside
+       * Field, under the input, which made the Field column taller than the
+       * button column — so `items-end` lined the button up with the hint
+       * instead of the input. Keeping only the label+input here means both
+       * columns are the same height and the button sits level with the box.
+       */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <Field
-          label={label}
-          htmlFor={name}
-          error={state.errors?.[name]}
-          hint={hint}
-          className="flex-1"
-        >
+        <Field label={label} htmlFor={name} error={error} className="flex-1">
           <input
             id={name}
             name={name}
@@ -60,6 +63,9 @@ export function InlineForm({
           {submitLabel}
         </SubmitButton>
       </div>
+      {hint && !error && (
+        <p className="text-[0.8125rem] text-[var(--text-muted)]">{hint}</p>
+      )}
     </form>
   );
 }

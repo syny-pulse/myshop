@@ -24,9 +24,32 @@ export function addDays(isoDate: string, days: number): string {
 }
 
 /** Day of week for a YYYY-MM-DD string, 0 = Sunday. Computed in UTC to stay stable. */
-function dayOfWeek(isoDate: string): number {
+export function dayOfWeek(isoDate: string): number {
   const [y, m, d] = isoDate.split('-').map(Number);
   return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+}
+
+/** "2026-03-15" -> "2026-03-01". */
+export function startOfMonth(isoDate: string): string {
+  return `${isoDate.slice(0, 7)}-01`;
+}
+
+/**
+ * Shift by whole months, clamping to the last day of the target month.
+ *
+ * The clamp is the whole point: Date.UTC rolls a day overflow forward, so a
+ * naive month shift turns 31 March into 3 March (via "31 February") and the
+ * calendar's back arrow would skip February altogether.
+ */
+export function addMonths(isoDate: string, months: number): string {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  const shifted = new Date(Date.UTC(y, m - 1 + months, 1));
+  // Day 0 of the following month is the last day of this one.
+  const lastDay = new Date(
+    Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth() + 1, 0),
+  ).getUTCDate();
+  shifted.setUTCDate(Math.min(d, lastDay));
+  return shifted.toISOString().slice(0, 10);
 }
 
 export type RangePreset = 'today' | 'week' | 'month' | 'custom';
@@ -120,6 +143,47 @@ export function formatDateShort(isoDate: string): string {
     timeZone: 'UTC',
   }).format(new Date(Date.UTC(y, m - 1, d)));
 }
+
+/** "March 2026" — the calendar heading. */
+export function formatMonthYear(isoDate: string): string {
+  const [y, m] = isoDate.split('-').map(Number);
+  return new Intl.DateTimeFormat('en-GB', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(y, m - 1, 1)));
+}
+
+/** The day number to print in a calendar cell: "2026-03-05" -> 5. */
+export function dayOfMonth(isoDate: string): number {
+  return Number(isoDate.slice(8, 10));
+}
+
+/**
+ * Six Monday-first weeks covering the month `isoDate` falls in, padded either
+ * side with the neighbouring months' days.
+ *
+ * Monday-first to agree with rangeFor('week'). Always six rows, never five:
+ * a short month rendering one row less would make the popover change height
+ * as the month arrows are tapped, and the arrow would slide out from under
+ * the finger already on it.
+ */
+export function calendarWeeks(isoDate: string): string[][] {
+  const first = startOfMonth(isoDate);
+  const lead = (dayOfWeek(first) + 6) % 7; // Sunday(0) -> 6, Monday(1) -> 0
+  const gridStart = addDays(first, -lead);
+
+  return Array.from({ length: 6 }, (_, week) =>
+    Array.from({ length: 7 }, (_, day) => addDays(gridStart, week * 7 + day)),
+  );
+}
+
+/** Column headings for calendarWeeks, Monday first. 1 Jan 2024 was a Monday. */
+export const WEEKDAY_LABELS: string[] = Array.from({ length: 7 }, (_, i) =>
+  new Intl.DateTimeFormat('en-GB', { weekday: 'short', timeZone: 'UTC' }).format(
+    new Date(Date.UTC(2024, 0, 1 + i)),
+  ),
+);
 
 /** Inclusive list of every date in a range — used to pad chart gaps with zeroes. */
 export function eachDay(from: string, to: string, cap = 366): string[] {

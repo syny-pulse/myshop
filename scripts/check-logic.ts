@@ -12,12 +12,19 @@
  *      arithmetic concatenates instead of adding.
  */
 import {
+  WEEKDAY_LABELS,
   addDays,
+  addMonths,
+  calendarWeeks,
+  dayOfMonth,
+  dayOfWeek,
   eachDay,
   isValidIsoDate,
   rangeFor,
+  startOfMonth,
   todayInKampala,
   formatDate,
+  formatMonthYear,
   rangeFromParams,
 } from '../lib/dates';
 import {
@@ -27,6 +34,7 @@ import {
   formatCompactUGX,
   marginPercent,
 } from '../lib/format';
+import { positiveMoney } from '../lib/validation';
 
 let failed = 0;
 function check(name: string, actual: unknown, expected: unknown) {
@@ -95,6 +103,46 @@ console.log('\n--- rangeFromParams tolerates bad URL input ---');
 check('unknown preset falls back to today', rangeFromParams({ range: 'nonsense' }).from, today);
 check('invalid custom date falls back safely', rangeFromParams({ range: 'custom', from: '2026-02-30', to: '2026-03-05' }).to, '2026-03-05');
 
+console.log('\n--- addMonths clamps instead of overflowing (the DatePicker arrows) ---');
+// Without the clamp, Date.UTC rolls "31 February" forward and the back arrow
+// jumps from March to March, skipping February entirely.
+check('31 Mar back a month lands on 28 Feb, not 3 Mar', addMonths('2026-03-31', -1), '2026-02-28');
+check('31 Jan forward a month in a leap year', addMonths('2028-01-31', 1), '2028-02-29');
+check('31 Aug forward a month clamps to 30 Sep', addMonths('2026-08-31', 1), '2026-09-30');
+check('short day is untouched', addMonths('2026-03-15', -1), '2026-02-15');
+check('forward over the year boundary', addMonths('2026-12-15', 1), '2027-01-15');
+check('backwards over the year boundary', addMonths('2026-01-15', -1), '2025-12-15');
+check('twelve months is a year', addMonths('2026-07-29', 12), '2027-07-29');
+
+console.log('\n--- calendarWeeks: the month grid ---');
+check('startOfMonth', startOfMonth('2026-03-15'), '2026-03-01');
+
+const marchGrid = calendarWeeks('2026-03-15');
+const marchCells = marchGrid.flat();
+check('always six rows, so the popover never changes height', marchGrid.length, 6);
+check('seven columns', marchGrid[0].length, 7);
+check('42 cells in total', marchCells.length, 42);
+check('the grid starts on a Monday', dayOfWeek(marchCells[0]), 1);
+check('the grid ends on a Sunday', dayOfWeek(marchCells[41]), 0);
+check('cells run consecutively', addDays(marchCells[0], 41), marchCells[41]);
+check('the 1st of the month is present', marchCells.includes('2026-03-01'), true);
+check('the last day of the month is present', marchCells.includes('2026-03-31'), true);
+check('every day of the month is present', eachDay('2026-03-01', '2026-03-31').every((d) => marchCells.includes(d)), true);
+
+// 1 Feb 2026 is a Sunday, so a Monday-first grid needs six leading days.
+check('a month starting on Sunday still shows the 1st', calendarWeeks('2026-02-01').flat().includes('2026-02-01'), true);
+check('leap day appears in its own grid', calendarWeeks('2028-02-10').flat().includes('2028-02-29'), true);
+// A 31-day month starting on a Sunday is the worst case: 6 lead days + 31 = 37.
+check('the worst-case month still fits in 42 cells', eachDay('2026-11-01', '2026-11-30').every((d) => calendarWeeks('2026-11-01').flat().includes(d)), true);
+
+console.log('\n--- Calendar labels ---');
+check('month heading', formatMonthYear('2026-03-15'), 'March 2026');
+check('heading ignores the day', formatMonthYear('2026-03-01'), formatMonthYear('2026-03-31'));
+check('day number for a cell', dayOfMonth('2026-03-05'), 5);
+check('weekday headings start on Monday', WEEKDAY_LABELS[0], 'Mon');
+check('weekday headings end on Sunday', WEEKDAY_LABELS[6], 'Sun');
+check('seven weekday headings', WEEKDAY_LABELS.length, 7);
+
 console.log('\n--- Money formatting (UGX, whole shillings) ---');
 check('formats with USh prefix', formatUGX(45000).startsWith('USh'), true);
 check('no decimal places', formatUGX(45000).includes('.'), false);
@@ -117,6 +165,21 @@ check('normal margin', marginPercent(1000, 250), '25.0%');
 
 console.log('\n--- Date display is unambiguous ---');
 check('formatDate avoids DD/MM ambiguity', formatDate('2026-03-05'), '5 Mar 2026');
+
+console.log('\n--- Amounts survive the thousands separators shown while typing ---');
+const parseMoney = (raw: unknown) => {
+  const result = positiveMoney.safeParse(raw);
+  return result.success ? result.data : 'REJECTED';
+};
+check('bare digits, the normal path', parseMoney('15000'), 15000);
+check('grouped input is not read as NaN', parseMoney('15,000'), 15000);
+check('grouped millions', parseMoney('1,250,000'), 1250000);
+check('stray spaces from a paste', parseMoney(' 45 000 '), 45000);
+check('decimals still round to whole shillings', parseMoney('1,500.6'), 1501);
+check('zero is still rejected', parseMoney('0'), 'REJECTED');
+check('empty is still rejected', parseMoney(''), 'REJECTED');
+check('junk is still rejected', parseMoney('abc'), 'REJECTED');
+check('the ceiling still holds', parseMoney('2,000,000,001'), 'REJECTED');
 
 console.log(`\n${failed === 0 ? 'ALL CHECKS PASSED' : `${failed} CHECK(S) FAILED`}\n`);
 process.exit(failed === 0 ? 0 : 1);

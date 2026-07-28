@@ -6,6 +6,8 @@ import { idle } from '@/lib/action-state';
 import { Field } from '@/components/ui/Field';
 import { FormMessage } from '@/components/ui/Alert';
 import { SubmitButton } from '@/components/ui/SubmitButton';
+import { AmountInput } from '@/components/ui/AmountInput';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { formatUGX } from '@/lib/format';
 import { todayInKampala } from '@/lib/dates';
 import type { SellableItem } from '@/lib/queries';
@@ -79,13 +81,11 @@ export function SaleForm({ items }: { items: SellableItem[] }) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Date of sale" htmlFor="saleDate" error={state.errors?.saleDate}>
-          <input
+          <DatePicker
             id="saleDate"
             name="saleDate"
-            type="date"
-            required
             defaultValue={todayInKampala()}
-            className="control"
+            invalid={Boolean(state.errors?.saleDate)}
           />
         </Field>
 
@@ -154,16 +154,12 @@ export function SaleForm({ items }: { items: SellableItem[] }) {
         </Field>
 
         <Field label="Selling price (per item)" htmlFor="unitPrice" error={state.errors?.unitPrice}>
-          <input
+          <AmountInput
             id="unitPrice"
             name="unitPrice"
-            type="number"
-            inputMode="numeric"
-            min={1}
-            step={1}
             required
             value={unitPrice}
-            onChange={(e) => setUnitPrice(e.target.value)}
+            onValueChange={setUnitPrice}
             aria-describedby={selected ? 'min-price-tag' : undefined}
             className="control tnum"
           />

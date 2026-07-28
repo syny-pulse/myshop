@@ -8,16 +8,24 @@ export const isoDate = z
   .refine(isValidIsoDate, { message: 'Enter a valid date' });
 
 /**
- * Money arrives from <input type="number"> as a string. UGX has no subunit,
- * so anything with decimals is a data-entry slip — round rather than reject,
- * but refuse negatives and absurd values outright.
+ * Money arrives from the form as a string. UGX has no subunit, so anything with
+ * decimals is a data-entry slip — round rather than reject, but refuse
+ * negatives and absurd values outright.
+ *
+ * Separators are stripped first. AmountInput submits bare digits through a
+ * hidden field, so "15,000" should never arrive; if it does — a cached bundle,
+ * a paste into a field that lost its JS — Number() would return NaN and the
+ * shop would be told "Enter an amount" about an amount plainly on screen.
  */
-export const money = z.coerce
-  .number({ invalid_type_error: 'Enter an amount' })
-  .finite('Enter a valid amount')
-  .min(0, 'Amount cannot be negative')
-  .max(2_000_000_000, 'That amount looks too large')
-  .transform((n) => Math.round(n));
+export const money = z.preprocess(
+  (value) => (typeof value === 'string' ? value.replace(/[,\s]/g, '') : value),
+  z.coerce
+    .number({ invalid_type_error: 'Enter an amount' })
+    .finite('Enter a valid amount')
+    .min(0, 'Amount cannot be negative')
+    .max(2_000_000_000, 'That amount looks too large')
+    .transform((n) => Math.round(n)),
+);
 
 export const positiveMoney = money.refine((n) => n > 0, {
   message: 'Amount must be more than zero',
