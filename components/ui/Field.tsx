@@ -25,7 +25,9 @@ export function Field({
 
   return (
     <div className={className}>
-      <label htmlFor={htmlFor} className="label">
+      {/* The id is load-bearing: DatePicker renders a button, whose accessible
+          name is built from this label plus the date it is showing. */}
+      <label id={`${htmlFor}-label`} htmlFor={htmlFor} className="label">
         {label}
       </label>
       {children}
