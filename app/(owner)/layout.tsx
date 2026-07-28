@@ -1,25 +1,8 @@
 import Link from 'next/link';
-import {
-  ChartLineUpIcon,
-  PackageIcon,
-  ReceiptIcon,
-  TagIcon,
-  UsersThreeIcon,
-  CoinsIcon,
-  SignOutIcon,
-} from '@phosphor-icons/react/dist/ssr';
+import { SignOutIcon } from '@phosphor-icons/react/dist/ssr';
 import { requireOwner } from '@/lib/auth';
 import { logout } from '@/app/actions/auth';
-import { AppNav, type NavItem } from '@/components/AppNav';
-
-const NAV: NavItem[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: ChartLineUpIcon },
-  { href: '/products', label: 'Stock', icon: PackageIcon },
-  { href: '/sales', label: 'Sales', icon: CoinsIcon },
-  { href: '/expenses', label: 'Expenses', icon: ReceiptIcon },
-  { href: '/categories', label: 'Categories', icon: TagIcon },
-  { href: '/attendants', label: 'Attendants', icon: UsersThreeIcon },
-];
+import { AppNav } from '@/components/AppNav';
 
 export default async function OwnerLayout({ children }: { children: React.ReactNode }) {
   // Guards the pages. Server Actions guard themselves; see lib/auth.ts.
@@ -48,7 +31,7 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
             </form>
           </div>
           <div className="pb-2">
-            <AppNav items={NAV} />
+            <AppNav variant="owner" />
           </div>
         </div>
       </header>

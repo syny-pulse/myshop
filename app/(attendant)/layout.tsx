@@ -1,19 +1,6 @@
 import Link from 'next/link';
-import {
-  StorefrontIcon,
-  CoinsIcon,
-  ReceiptIcon,
-  ChartBarIcon,
-} from '@phosphor-icons/react/dist/ssr';
 import { requireAttendant } from '@/lib/auth';
-import { AppNav, type NavItem } from '@/components/AppNav';
-
-const NAV: NavItem[] = [
-  { href: '/shop', label: 'Stock', icon: StorefrontIcon },
-  { href: '/shop/sale', label: 'Sell', icon: CoinsIcon },
-  { href: '/shop/expense', label: 'Expense', icon: ReceiptIcon },
-  { href: '/shop/summary', label: 'Summary', icon: ChartBarIcon },
-];
+import { AppNav } from '@/components/AppNav';
 
 export default async function AttendantLayout({
   children,
@@ -39,7 +26,7 @@ export default async function AttendantLayout({
             </span>
           </div>
           <div className="pb-2">
-            <AppNav items={NAV} />
+            <AppNav variant="attendant" />
           </div>
         </div>
       </header>
